@@ -31,6 +31,41 @@
     </div>
 
     <script type="module">
+        // --- REGISTRAZIONE SERVICE WORKER (Necessaria per installazione App) ---
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('Tactical Overlay Service Worker Registrato');
+  });
+}
+
+// --- WAKE LOCK (Impedisce al PC/Tablet di andare in standby) ---
+let wakeLock = null;
+const requestWakeLock = async () => {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('Monitor bloccato: SEMPRE ACCESO');
+    }
+  } catch (err) {
+    console.error('Errore WakeLock:', err);
+  }
+};
+
+// Richiedi il blocco schermo al primo click sulla dashboard
+document.addEventListener('click', () => {
+    requestWakeLock();
+    // Opzionale: attiva anche il fullscreen al primo click
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    }
+});
+
+// Gestione visibilità (ripristina il blocco se cambi scheda e torni)
+document.addEventListener('visibilitychange', () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    requestWakeLock();
+  }
+});
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 

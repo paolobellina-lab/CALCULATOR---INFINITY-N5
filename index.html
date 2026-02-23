@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>INFINITY N5 - TACTICAL PC OVERLAY</title>
     
     <link rel="manifest" href="manifest.json">
@@ -21,13 +22,11 @@
         }
         .column { flex: 1; padding: 20px; border: 1px solid #222; overflow-y: auto; }
         
-        /* Stile Nomads (Sinistra) */
         #col-nomads { 
             border-right: 2px solid #00ff41; 
             background: linear-gradient(to right, rgba(0,255,65,0.05), transparent); 
         }
         
-        /* Stile PanOceania (Destra) */
         #col-pano { 
             border-left: 2px solid #00d2ff; 
             background: linear-gradient(to left, rgba(0,210,255,0.05), transparent); 
@@ -47,7 +46,6 @@
             transition: all 0.3s ease;
         }
         
-        /* COLORI STATI */
         .ACTIVE { border-left: 8px solid #00ff41; }
         .UNCONSCIOUS { border-left: 8px solid #ffaa00; background: rgba(255,170,0,0.1); color: #ffaa00; }
         .DEAD { border-left: 8px solid #ff3366; background: rgba(255,51,102,0.1); color: #ff3366; text-decoration: line-through; opacity: 0.5; }
@@ -55,12 +53,13 @@
         .alias { font-size: 1.4em; font-weight: bold; }
         .details { font-size: 0.8em; color: #aaa; }
         
-        /* Pulsante Fullscreen per PC */
         #fs-btn {
             position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(51, 51, 51, 0.5); color: #fff; border: 1px solid #555;
-            padding: 5px 15px; cursor: pointer; font-size: 10px; border-radius: 20px;
+            background: rgba(51, 51, 51, 0.8); color: #fff; border: 1px solid #555;
+            padding: 10px 20px; cursor: pointer; font-size: 12px; border-radius: 20px;
+            text-transform: uppercase; font-weight: bold; z-index: 100;
         }
+        #fs-btn:hover { background: #00ff41; color: #000; }
     </style>
 </head>
 <body>
@@ -78,14 +77,14 @@
     <button id="fs-btn">MODALITÀ TATTICA (FULLSCREEN)</button>
 
     <script type="module">
-        // --- 1. REGISTRAZIONE SERVICE WORKER ---
+        // --- REGISTRAZIONE SERVICE WORKER (FONDAMENTALE PER L'INSTALLAZIONE) ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Dashboard SW Registrato!'))
+                .then(reg => console.log('Dashboard SW Registrato!', reg))
                 .catch(err => console.log('Errore SW:', err));
         }
 
-        // --- 2. WAKE LOCK (Monitor sempre acceso) ---
+        // --- WAKE LOCK (Monitor sempre acceso) ---
         let wakeLock = null;
         const requestWakeLock = async () => {
             try {
@@ -93,25 +92,34 @@
                     wakeLock = await navigator.wakeLock.request('screen');
                     console.log('Monitor PC bloccato: SEMPRE ACCESO');
                 }
-            } catch (err) { console.log('WakeLock non supportato o negato'); }
+            } catch (err) { console.log('WakeLock non supportato o negato', err); }
         };
 
-        // --- 3. ATTIVAZIONE AL CLICK ---
+        // --- ATTIVAZIONE AL CLICK SUL PULSANTE ---
         document.getElementById('fs-btn').addEventListener('click', () => {
             requestWakeLock();
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            }
+            // Nasconde il pulsante una volta attivato
+            document.getElementById('fs-btn').style.display = 'none';
+        });
+
+        // Ripristina il Wake Lock se si cambia scheda e si torna indietro
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
             }
         });
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // CONFIGURAZIONE FIREBASE (Identica alle altre app)
+        // --- INCOLLA QUI IL TUO CONFIG FIREBASE ---
         const firebaseConfig = { 
             apiKey: "IL_TUO_API_KEY",
             projectId: "IL_TUO_PROGETTO",
-            // ... incolla il resto
+            // ... ecc
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -129,10 +137,9 @@
                             <div class="alias">${u.alias}</div>
                             <div class="details">${u.name} | ${u.weapon} | BS ${u.bs}</div>
                         </div>
-                        <div style="font-weight:bold; font-size:0.7em;">${u.state}</div>
+                        <div style="font-weight:bold; font-size:0.8em; letter-spacing: 1px;">${u.state}</div>
                     </div>
                 `;
-                // Smista le unità nelle due colonne in base al player
                 const colId = u.player === "G_NOMADS" ? 'units-nomads' : 'units-pano';
                 const container = document.getElementById(colId);
                 if(container) container.innerHTML += card;

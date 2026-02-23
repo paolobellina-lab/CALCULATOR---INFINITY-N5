@@ -1,14 +1,14 @@
 {
-  "name": "INFINITY N5 Tactical Overlay",
+  "name": "Tactical PC Overlay - N5",
   "short_name": "N5 Overlay",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#050709",
-  "theme_color": "#00ffaa",
+  "theme_color": "#050709",
   "icons": [
     {
-      "src": "icon3.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }

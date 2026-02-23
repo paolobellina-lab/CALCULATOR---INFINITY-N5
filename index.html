@@ -3,75 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <title>INFINITY N5 - TACTICAL PC OVERLAY</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050709">
+
     <style>
-        body { background: #050709; color: #fff; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .column { flex: 1; padding: 20px; border: 1px solid #333; overflow-y: auto; }
-        #col-nomads { border-right: 2px solid #00ff41; background: linear-gradient(to right, rgba(0,255,65,0.05), transparent); }
-        #col-pano { border-left: 2px solid #00d2ff; background: linear-gradient(to left, rgba(0,210,255,0.05), transparent); }
-        h1 { font-size: 1.2em; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        .card { padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        body { 
+            background: #050709; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            border: 1px solid #333;
+            box-sizing: border-box;
+        }
+        .column { flex: 1; padding: 20px; border: 1px solid #222; overflow-y: auto; }
+        
+        /* Stile Nomads (Sinistra) */
+        #col-nomads { 
+            border-right: 2px solid #00ff41; 
+            background: linear-gradient(to right, rgba(0,255,65,0.05), transparent); 
+        }
+        
+        /* Stile PanOceania (Destra) */
+        #col-pano { 
+            border-left: 2px solid #00d2ff; 
+            background: linear-gradient(to left, rgba(0,210,255,0.05), transparent); 
+        }
+
+        h1 { font-size: 1.2em; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .card { 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 1px solid #333; 
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s ease;
+        }
         
         /* COLORI STATI */
-        .ACTIVE { border-left: 10px solid #00ff41; }
-        .UNCONSCIOUS { border-left: 10px solid #ffaa00; background: rgba(255,170,0,0.1); color: #ffaa00; }
-        .DEAD { border-left: 10px solid #ff3366; background: rgba(255,51,102,0.1); color: #ff3366; text-decoration: line-through; opacity: 0.6; }
+        .ACTIVE { border-left: 8px solid #00ff41; }
+        .UNCONSCIOUS { border-left: 8px solid #ffaa00; background: rgba(255,170,0,0.1); color: #ffaa00; }
+        .DEAD { border-left: 8px solid #ff3366; background: rgba(255,51,102,0.1); color: #ff3366; text-decoration: line-through; opacity: 0.5; }
         
-        .alias { font-size: 1.5em; font-weight: bold; }
+        .alias { font-size: 1.4em; font-weight: bold; }
         .details { font-size: 0.8em; color: #aaa; }
+        
+        /* Pulsante Fullscreen per PC */
+        #fs-btn {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(51, 51, 51, 0.5); color: #fff; border: 1px solid #555;
+            padding: 5px 15px; cursor: pointer; font-size: 10px; border-radius: 20px;
+        }
     </style>
 </head>
 <body>
+
     <div id="col-nomads" class="column">
         <h1 style="color: #00ff41;">NOMADS SECTOR</h1>
         <div id="units-nomads"></div>
     </div>
+
     <div id="col-pano" class="column">
         <h1 style="color: #00d2ff;">PANOCEANIA SECTOR</h1>
         <div id="units-pano"></div>
     </div>
 
+    <button id="fs-btn">MODALITÀ TATTICA (FULLSCREEN)</button>
+
     <script type="module">
-        // --- REGISTRAZIONE SERVICE WORKER (Necessaria per installazione App) ---
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(() => {
-    console.log('Tactical Overlay Service Worker Registrato');
-  });
-}
+        // --- 1. REGISTRAZIONE SERVICE WORKER ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Dashboard SW Registrato!'))
+                .catch(err => console.log('Errore SW:', err));
+        }
 
-// --- WAKE LOCK (Impedisce al PC/Tablet di andare in standby) ---
-let wakeLock = null;
-const requestWakeLock = async () => {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      console.log('Monitor bloccato: SEMPRE ACCESO');
-    }
-  } catch (err) {
-    console.error('Errore WakeLock:', err);
-  }
-};
+        // --- 2. WAKE LOCK (Monitor sempre acceso) ---
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Monitor PC bloccato: SEMPRE ACCESO');
+                }
+            } catch (err) { console.log('WakeLock non supportato o negato'); }
+        };
 
-// Richiedi il blocco schermo al primo click sulla dashboard
-document.addEventListener('click', () => {
-    requestWakeLock();
-    // Opzionale: attiva anche il fullscreen al primo click
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-    }
-});
+        // --- 3. ATTIVAZIONE AL CLICK ---
+        document.getElementById('fs-btn').addEventListener('click', () => {
+            requestWakeLock();
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            }
+        });
 
-// Gestione visibilità (ripristina il blocco se cambi scheda e torni)
-document.addEventListener('visibilitychange', () => {
-  if (wakeLock !== null && document.visibilityState === 'visible') {
-    requestWakeLock();
-  }
-});
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const app = initializeApp({ /* STESSO CONFIG */ });
+        // CONFIGURAZIONE FIREBASE (Identica alle altre app)
+        const firebaseConfig = { 
+            apiKey: "IL_TUO_API_KEY",
+            projectId: "IL_TUO_PROGETTO",
+            // ... incolla il resto
+        };
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- ASCOLTO DATABASE IN TEMPO REALE ---
         onSnapshot(collection(db, "sessione_corrente"), (snapshot) => {
             document.getElementById('units-nomads').innerHTML = "";
             document.getElementById('units-pano').innerHTML = "";
@@ -84,11 +129,13 @@ document.addEventListener('visibilitychange', () => {
                             <div class="alias">${u.alias}</div>
                             <div class="details">${u.name} | ${u.weapon} | BS ${u.bs}</div>
                         </div>
-                        <div style="font-weight:bold;">${u.state}</div>
+                        <div style="font-weight:bold; font-size:0.7em;">${u.state}</div>
                     </div>
                 `;
-                const col = u.player === "G_NOMADS" ? 'units-nomads' : 'units-pano';
-                document.getElementById(col).innerHTML += card;
+                // Smista le unità nelle due colonne in base al player
+                const colId = u.player === "G_NOMADS" ? 'units-nomads' : 'units-pano';
+                const container = document.getElementById(colId);
+                if(container) container.innerHTML += card;
             });
         });
     </script>

@@ -1,8 +1,9 @@
-// Service Worker Minimal per PWA
+const CACHE_NAME = 'dashboard-v1';
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
-self.addEventListener('fetch', () => {});
+
 self.addEventListener('fetch', (event) => {
   event.respondWith(fetch(event.request));
 });
